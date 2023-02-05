@@ -1,7 +1,7 @@
 [Bb][Uu][Ii][Ll][Dd]
 
 build/
-extern/
+extern/*
 
 CMakeLists.txt.user
 CMakeCache.txt
