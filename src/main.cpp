@@ -53,22 +53,28 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         double currentTime = glfwGetTime();
+        glClear(GL_COLOR_BUFFER_BIT);
 
-        const GLfloat color[] = {
-            (float) sin(currentTime) * 0.5f + 0.5f,
-            (float) cos(currentTime) * 0.5f + 0.5f,
-            0.0f,
-            1.0f
-        };
+        // const GLfloat color[] = {
+        //     (float)sin(currentTime) * 0.5f + 0.5f,
+        //     (float)cos(currentTime) * 0.5f + 0.5f,
+        //     0.0f,
+        //     1.0f};
+
+        // const GLfloat color2[] = {
+        //     0.0f,
+        //     (float)sin(currentTime) * 0.5f + 0.5f,
+        //     (float)cos(currentTime) * 0.5f + 0.5f,
+        //     1.0f};
 
         const GLfloat attrib[] = {
-            (float) sin(currentTime) * 0.5f,
-            (float) cos(currentTime) * 0.5f,
+            (float)sin(currentTime) * 0.5f,
+            (float)cos(currentTime) * 0.5f,
             0.0f,
-            0.0f
-        };
+            0.0f};
 
         glVertexAttrib4fv(0, attrib);
+        // glVertexAttrib4fv(1, color2);
 
         // glClearBufferfv(GL_COLOR, 0, color);
 
@@ -86,16 +92,20 @@ int main()
     return 0;
 }
 
-GLuint compile_shaders() {
+GLuint compile_shaders()
+{
     GLuint vertex_shader;
     GLuint fragment_shader;
     GLuint program;
 
-    static const GLchar* vertex_shader_source[] = 
-    {
-        R"(#version 450 core
+    static const GLchar *vertex_shader_source[] =
+        {
+            R"(#version 450 core
 
             layout (location = 0) in vec4 offset;
+            // layout (location = 1) in vec4 color;
+
+            out vec4 vs_color;
 
             void main(void)
             {
@@ -105,30 +115,44 @@ GLuint compile_shaders() {
                     vec4(0.0, 0.25, 0.5, 1.0)
                 );
 
-                gl_Position = vertices[gl_VertexID] + offset;
-            }
-        )"
-    };
+                const vec4 colors[] = vec4[3](
+                    vec4(1.0, 0.0, 0.0, 1.0),
+                    vec4(0.0, 1.0, 0.0, 1.0),
+                    vec4(0.0, 0.0, 1.0, 1.0)
+                );
 
-    static const GLchar* fragment_shader_source[] = 
-    {
-        R"(#version 450 core
+                gl_Position = vertices[gl_VertexID] + offset;
+
+                vs_color = colors[gl_VertexID];
+            }
+        )"};
+
+    static const GLchar *fragment_shader_source[] =
+        {
+            R"(#version 450 core
+
+            in vec4 vs_color;
 
             out vec4 color;
 
             void main(void)
             {
-                color = vec4(0.0, 0.0, 0.5, 1.0);
+                // color = vec4(
+                //     sin(gl_FragCoord.x * 0.25) * 0.5 + 0.5,
+                //     cos(gl_FragCoord.y * 0.25) * 0.5 + 0.5,
+                //     sin(gl_FragCoord.x * 0.15) * cos(gl_FragCoord.y * 0.15),
+                //     1.0
+                // );
+                color = vs_color;
             }
-        )"
-    };
+        )"};
 
     vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex_shader, 1, vertex_shader_source, NULL);
     glCompileShader(vertex_shader);
 
     fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1 , fragment_shader_source, NULL);
+    glShaderSource(fragment_shader, 1, fragment_shader_source, NULL);
     glCompileShader(fragment_shader);
 
     program = glCreateProgram();
