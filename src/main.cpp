@@ -8,6 +8,15 @@
 #define WIDTH 800
 #define HEIGHT 600
 
+// TODO
+// VEO
+
+struct Vertex
+{
+    glm::vec3 position;
+    glm::vec4 color;
+};
+
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -43,42 +52,41 @@ int main()
 
     // after setup
     GLuint rendering_program = compile_shaders();
-    GLuint vertex_array_object;
-    glCreateVertexArrays(1, &vertex_array_object);
-    glBindVertexArray(vertex_array_object);
-
+    // use shader program
     glUseProgram(rendering_program);
+
+    const Vertex vertices[3] = {
+        {glm::vec3(-0.25, -0.25, 0.5), glm::vec4(1.0, 0.1, 0.1, 1.0)},
+        {glm::vec3(0.25, -0.25, 0.5), glm::vec4(0.1, 1.0, 0.1, 1.0)},
+        {glm::vec3(0.0, 0.25, 0.5), glm::vec4(0.1, 0.1, 1.0, 1.0)},
+    };
+
+    // create a vao for opengl to put vertices in
+    GLuint VertexArrayObject;
+    glCreateVertexArrays(1, &VertexArrayObject);
+    glBindVertexArray(VertexArrayObject);
+
+    // create a buffer so we can push those vertices to the target
+    GLuint VertexBufferObject;
+    glCreateBuffers(1, &VertexBufferObject);
+    glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // define position attribute
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, position));
+
+    // define color attribute
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
 
     // rendering loop
     while (!glfwWindowShouldClose(window))
     {
         double currentTime = glfwGetTime();
-        glClear(GL_COLOR_BUFFER_BIT);
+        // glClear(GL_COLOR_BUFFER_BIT);
 
-        // const GLfloat color[] = {
-        //     (float)sin(currentTime) * 0.5f + 0.5f,
-        //     (float)cos(currentTime) * 0.5f + 0.5f,
-        //     0.0f,
-        //     1.0f};
-
-        // const GLfloat color2[] = {
-        //     0.0f,
-        //     (float)sin(currentTime) * 0.5f + 0.5f,
-        //     (float)cos(currentTime) * 0.5f + 0.5f,
-        //     1.0f};
-
-        const GLfloat attrib[] = {
-            (float)sin(currentTime) * 0.5f,
-            (float)cos(currentTime) * 0.5f,
-            0.0f,
-            0.0f};
-
-        glVertexAttrib4fv(0, attrib);
-        // glVertexAttrib4fv(1, color2);
-
-        // glClearBufferfv(GL_COLOR, 0, color);
-
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, std::size(vertices));
 
         processInput(window);
         glfwSwapBuffers(window);
@@ -86,7 +94,7 @@ int main()
     }
 
     // cleanup
-    glDeleteVertexArrays(1, &vertex_array_object);
+    glDeleteVertexArrays(1, &VertexArrayObject);
     glDeleteProgram(rendering_program);
 
     return 0;
@@ -102,28 +110,16 @@ GLuint compile_shaders()
         {
             R"(#version 450 core
 
-            layout (location = 0) in vec4 offset;
-            // layout (location = 1) in vec4 color;
+            layout (location = 0) in vec3 position;
+            layout (location = 1) in vec4 color;
 
             out vec4 vs_color;
 
-            void main(void)
+            void main()
             {
-                const vec4 vertices[3] = vec4[3](
-                    vec4(-0.25, -0.25, 0.5, 1.0),
-                    vec4(0.25, -0.25, 0.5, 1.0),
-                    vec4(0.0, 0.25, 0.5, 1.0)
-                );
+                gl_Position = vec4(position, 1.0);
 
-                const vec4 colors[] = vec4[3](
-                    vec4(1.0, 0.0, 0.0, 1.0),
-                    vec4(0.0, 1.0, 0.0, 1.0),
-                    vec4(0.0, 0.0, 1.0, 1.0)
-                );
-
-                gl_Position = vertices[gl_VertexID] + offset;
-
-                vs_color = colors[gl_VertexID];
+                vs_color = color;
             }
         )"};
 
@@ -133,17 +129,11 @@ GLuint compile_shaders()
 
             in vec4 vs_color;
 
-            out vec4 color;
+            out vec4 FragColor;
 
-            void main(void)
+            void main()
             {
-                // color = vec4(
-                //     sin(gl_FragCoord.x * 0.25) * 0.5 + 0.5,
-                //     cos(gl_FragCoord.y * 0.25) * 0.5 + 0.5,
-                //     sin(gl_FragCoord.x * 0.15) * cos(gl_FragCoord.y * 0.15),
-                //     1.0
-                // );
-                color = vs_color;
+                FragColor = vs_color;
             }
         )"};
 
