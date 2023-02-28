@@ -2,6 +2,9 @@
 #include <cmath>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -23,7 +26,12 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
 }
 
-GLuint compile_shaders();
+void resize_window_callback(GLFWwindow *window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
+GLuint compile_shaders(int type = 0);
 
 int main()
 {
@@ -41,6 +49,7 @@ int main()
     }
 
     glfwMakeContextCurrent(window);
+    glfwSetWindowSizeCallback(window, resize_window_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -52,14 +61,23 @@ int main()
 
     // after setup
     GLuint rendering_program = compile_shaders();
+    GLuint rendering_program2 = compile_shaders(1);
     // use shader program
     glUseProgram(rendering_program);
 
-    const Vertex vertices[3] = {
-        {glm::vec3(-0.25, -0.25, 0.5), glm::vec4(1.0, 0.1, 0.1, 1.0)},
-        {glm::vec3(0.25, -0.25, 0.5), glm::vec4(0.1, 1.0, 0.1, 1.0)},
-        {glm::vec3(0.0, 0.25, 0.5), glm::vec4(0.1, 0.1, 1.0, 1.0)},
+    const Vertex vertices[] = {
+        {glm::vec3(-0.25, 0, 0.0), glm::vec4(1.0, 0.0, 1.0, 1.0)},
+        {glm::vec3(0.25, 0, 0.0), glm::vec4(1.0, 1.0, 0.1, 1.0)},
+        {glm::vec3(0.0, 0.5, 0.0), glm::vec4(1.0, 0.0, 0.0, 1.0)},
+        {glm::vec3(-0.5, -0.5, 0.0), glm::vec4(0.0, 0.0, 1.0, 1.0)},
+        {glm::vec3(0.0, -0.5, 0.0), glm::vec4(0.0, 1.0, 1.0, 1.0)},
+        {glm::vec3(0.5, -0.5, 0.0), glm::vec4(0.0, 1.0, 0.0, 1.0)},
     };
+    // TODO they are actually indices
+    const GLuint elements[] = {
+        0, 1, 2,
+        3, 4, 0,
+        4, 5, 1};
 
     // create a vao for opengl to put vertices in
     GLuint VertexArrayObject;
@@ -72,6 +90,12 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+    // create EBO
+    GLuint VertexElementBuffer;
+    glCreateBuffers(1, &VertexElementBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VertexElementBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+
     // define position attribute
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, position));
@@ -80,13 +104,17 @@ int main()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
 
+    GLuint transformLoacation = glGetUniformLocation(rendering_program, "transform");
+    glm::mat4 trans = glm::mat4(1.0f);
     // rendering loop
     while (!glfwWindowShouldClose(window))
     {
         double currentTime = glfwGetTime();
-        // glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
+        trans = glm::rotate(trans, (float)currentTime / 1000, glm::vec3(0.0, 1.0, 0.0));
+        glUniformMatrix4fv(transformLoacation, 1, GL_FALSE, glm::value_ptr(trans));
 
-        glDrawArrays(GL_TRIANGLES, 0, std::size(vertices));
+        glDrawElements(GL_TRIANGLES, std::size(elements), GL_UNSIGNED_INT, 0);
 
         processInput(window);
         glfwSwapBuffers(window);
@@ -100,7 +128,7 @@ int main()
     return 0;
 }
 
-GLuint compile_shaders()
+GLuint compile_shaders(int type)
 {
     GLuint vertex_shader;
     GLuint fragment_shader;
@@ -115,17 +143,49 @@ GLuint compile_shaders()
 
             out vec4 vs_color;
 
+            uniform mat4 transform;
+
             void main()
             {
-                gl_Position = vec4(position, 1.0);
+                gl_Position =  transform * vec4(position, 1.0);
 
                 vs_color = color;
             }
         )"};
 
-    static const GLchar *fragment_shader_source[] =
-        {
-            R"(#version 450 core
+    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, vertex_shader_source, NULL);
+    glCompileShader(vertex_shader);
+
+    // delete[] *vertex_shader_source;
+
+    if (type)
+    {
+        static const GLchar *fragment_shader_source[] =
+            {
+                R"(#version 450 core
+
+            in vec4 vs_color;
+
+            out vec4 FragColor;
+
+            void main()
+            {
+                FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+            }
+        )"};
+
+        fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragment_shader, 1, fragment_shader_source, NULL);
+        glCompileShader(fragment_shader);
+
+        // delete[] *fragment_shader_source;
+    }
+    else
+    {
+        static const GLchar *fragment_shader_source[] =
+            {
+                R"(#version 450 core
 
             in vec4 vs_color;
 
@@ -137,13 +197,12 @@ GLuint compile_shaders()
             }
         )"};
 
-    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, vertex_shader_source, NULL);
-    glCompileShader(vertex_shader);
+        fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragment_shader, 1, fragment_shader_source, NULL);
+        glCompileShader(fragment_shader);
 
-    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, fragment_shader_source, NULL);
-    glCompileShader(fragment_shader);
+        // delete[] *fragment_shader_source;
+    }
 
     program = glCreateProgram();
     glAttachShader(program, vertex_shader);
