@@ -29,6 +29,9 @@ void processInput(GLFWwindow *window)
 void resize_window_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
+
+    glm::mat4 projection = glm::perspective(45.0, ((double)width)/((double)height), 0.1, 100.0);
+    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
 GLuint compile_shaders(int type = 0);
@@ -66,18 +69,40 @@ int main()
     glUseProgram(rendering_program);
 
     const Vertex vertices[] = {
-        {glm::vec3(-0.25, 0, 0.0), glm::vec4(1.0, 0.0, 1.0, 1.0)},
-        {glm::vec3(0.25, 0, 0.0), glm::vec4(1.0, 1.0, 0.1, 1.0)},
-        {glm::vec3(0.0, 0.5, 0.0), glm::vec4(1.0, 0.0, 0.0, 1.0)},
-        {glm::vec3(-0.5, -0.5, 0.0), glm::vec4(0.0, 0.0, 1.0, 1.0)},
-        {glm::vec3(0.0, -0.5, 0.0), glm::vec4(0.0, 1.0, 1.0, 1.0)},
-        {glm::vec3(0.5, -0.5, 0.0), glm::vec4(0.0, 1.0, 0.0, 1.0)},
+        {glm::vec3(-0.25, -0.25, 0.25), glm::vec4(1.0, 1.0, 1.0, 1.0)}, // 0 - lewo, dół, przód
+        {glm::vec3(0.25, -0.25, 0.25), glm::vec4(0.0, 1.0, 0.0, 1.0)}, // 1 - prawo, dół, przód
+        {glm::vec3(-0.25, 0.25, 0.25), glm::vec4(1.0, 0.0, 0.0, 1.0)}, // 2 - lewo, góra, przód
+        {glm::vec3(0.25, 0.25, 0.25), glm::vec4(1.0, 1.0, 0.0, 1.0)}, // 3 - prawo, góra, przód
+        {glm::vec3(-0.25, -0.25, -0.25), glm::vec4(0.0, 0.0, 1.0, 1.0)}, // 4 - lewo, dół, tył
+        {glm::vec3(0.25, -0.25, -0.25), glm::vec4(0.0, 1.0, 1.0, 1.0)}, // 5 - prawo, dół, tył
+        {glm::vec3(-0.25, 0.25, -0.25), glm::vec4(1.0, 0.0, 1.0, 1.0)}, // 6 - lewo, góra, tył
+        {glm::vec3(0.25, 0.25, -0.25), glm::vec4(0.0, 0.0, 0.0, 1.0)}, // 7 - prawo, góra, tył
     };
     // TODO they are actually indices
     const GLuint elements[] = {
-        0, 1, 2,
-        3, 4, 0,
-        4, 5, 1};
+        // top
+        2, 6, 7,
+        2, 3, 7,
+        // bottom
+        0, 4, 5,
+        0, 1, 5,
+
+        // left
+        0, 2, 6,
+        0, 4, 6,
+
+        // right
+        1, 3, 7,
+        1, 5, 7,
+
+        // front
+        0, 2, 3,
+        0, 1, 3,
+
+        // back
+        4, 6, 7,
+        4, 5, 7
+    };
 
     // create a vao for opengl to put vertices in
     GLuint VertexArrayObject;
@@ -104,15 +129,38 @@ int main()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
 
-    GLuint transformLoacation = glGetUniformLocation(rendering_program, "transform");
+    GLuint transformLocation = glGetUniformLocation(rendering_program, "transform");
     glm::mat4 trans = glm::mat4(1.0f);
+
+    GLuint projectionLocation = glGetUniformLocation(rendering_program, "projection");
+    glm::mat4 projection = glm::perspective(45.0, 800.0/600.0, 0.1, 100.0);
+    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+// to be enabled when i will have faces to cull
+    // glEnable(GL_CULL_FACE);
+    // glFrontFace(GL_CCW);
+
     // rendering loop
     while (!glfwWindowShouldClose(window))
     {
         double currentTime = glfwGetTime();
         glClear(GL_COLOR_BUFFER_BIT);
-        trans = glm::rotate(trans, (float)currentTime / 1000, glm::vec3(0.0, 1.0, 0.0));
-        glUniformMatrix4fv(transformLoacation, 1, GL_FALSE, glm::value_ptr(trans));
+        glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0, 0);
+        // trans = glm::rotate(trans, (float)currentTime / 1000, glm::vec3(0.0, 1.0, 0.0));
+        float f = (float) currentTime * (float) M_PI * 0.1;
+        
+        // trans = glm::vec3(0.0, 0.0, -4.0) * glm::vec3(sinf(2.1 * f) * 0.5, cosf(1.7 * f), sinf(1.3 * f) * cosf(1.5 * f) * 2.0f)
+
+        glm::mat4 View = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.0, 0.0, -4.0)) * 
+        glm::translate(glm::identity<glm::mat4>(), glm::vec3(sinf(2.1 * f) * 0.5, cosf(1.7 * f), sinf(1.3 * f) * cosf(1.5 * f) * 2.0f));
+        View = glm::rotate(View, (float)(currentTime * 0.45), glm::vec3(0.0, 1.0, 0.0));
+        View = glm::rotate(View, (float)(currentTime * 0.81), glm::vec3(1.0, 0.0, 0.0));
+        
+
+        glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(View));
 
         glDrawElements(GL_TRIANGLES, std::size(elements), GL_UNSIGNED_INT, 0);
 
@@ -143,11 +191,12 @@ GLuint compile_shaders(int type)
 
             out vec4 vs_color;
 
+            layout (location = 0) uniform mat4 projection;
             uniform mat4 transform;
 
             void main()
             {
-                gl_Position =  transform * vec4(position, 1.0);
+                gl_Position = projection * transform * vec4(position, 1.0);
 
                 vs_color = color;
             }
