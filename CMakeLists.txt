@@ -24,16 +24,24 @@ target_include_directories(glad PRIVATE ${PROJECT_SOURCE_DIR}/extern/glad/includ
 add_executable(
     ${PROJECT_NAME}
     src/main.cpp
+    src/Shader.cpp
+    src/Renderer.cpp
+    src/VertexBuffer.cpp
+    src/VertexBufferLayout.cpp
+    src/ElementBuffer.cpp
+    src/VertexArrayObject
 )
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC extern/glfw/include
     PUBLIC extern/glad/include
+    PUBLIC include
 )
 
 target_link_directories(cmakeGL
     PRIVATE extern/glfw/src
     PRIVATE extern/glad/src
+    PRIVATE src
 )
 
 target_link_libraries(${PROJECT_NAME} glfw glm glad)
