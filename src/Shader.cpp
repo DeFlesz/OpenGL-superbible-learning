@@ -45,7 +45,7 @@ unsigned int Shader::CompileShader(unsigned int type, std::string source) {
 unsigned int Shader::CreateShader(std::string& vertexSource, std::string& fragmentSource)
 {
   GLCall(unsigned int program = glCreateProgram());
-  std::cout << vertexSource << "\n" << fragmentSource << std::endl;
+  // std::cout << vertexSource << "\n" << fragmentSource << std::endl;
 
   unsigned int vertexShader = CompileShader(GL_VERTEX_SHADER, vertexSource);
   unsigned int fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentSource);

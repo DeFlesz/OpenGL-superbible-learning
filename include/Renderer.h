@@ -5,7 +5,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define ASSERT(x) if (!(x)) __debugbreak()
+#ifdef __GNUC__
+  #define LINUX
+  #include <signal.h>
+  #define ASSERT(x) if (!(x)) raise(SIGTRAP)
+#else
+  #define WINDOWS
+  #define ASSERT(x) if (!(x)) __debugbreak
+#endif
+
 #define GLCall(x) GLClearError();\ 
     x;\ 
     ASSERT(GLLogCall(#x, __FILE__, __LINE__))

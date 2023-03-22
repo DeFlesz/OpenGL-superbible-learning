@@ -125,7 +125,7 @@ int main()
 
     // create EBO
     ElementBuffer elementBuffer(indices, std::size(indices));
-    std::cout << elementBuffer.GetCount() << std::endl;
+    // std::cout << elementBuffer.GetCount() << std::endl;
 
     // glm::mat4 trans = glm::mat4(1.0f);
 
