@@ -3,6 +3,7 @@
 #include "Renderer.h"
 
 ElementBuffer::ElementBuffer(const unsigned int* data, unsigned int count)
+  : count(count)
 {
   GLCall(glCreateBuffers(1, &rendererID));
   GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rendererID));
