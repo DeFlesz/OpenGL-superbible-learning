@@ -5,12 +5,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#ifdef __GNUC__
-  #define LINUX
+
+#ifdef __linux__
   #include <signal.h>
   #define ASSERT(x) if (!(x)) raise(SIGTRAP)
-#else
-  #define WINDOWS
+#elif _WIN32
   #define ASSERT(x) if (!(x)) __debugbreak
 #endif
 
