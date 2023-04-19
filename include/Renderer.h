@@ -5,6 +5,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "VertexArrayObject.h"
+#include "ElementBuffer.h"
+#include "Shader.h"
 
 #ifdef __linux__
   #include <signal.h>
@@ -21,3 +24,8 @@
 void GLClearError();
 
 bool GLLogCall(const char* function, const char* file, int line);
+
+class Renderer{
+  public:
+    void Draw(const VertexArrayObject& va, const ElementBuffer& ib, Shader& shader, float time) const;
+};

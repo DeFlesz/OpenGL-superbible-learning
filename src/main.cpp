@@ -17,6 +17,7 @@
 #include "Shader.h"
 
 #include "VertexArrayObject.h"
+#include "VertexBufferLayout.h"
 #include "VertexBuffer.h"
 #include "ElementBuffer.h"
 
@@ -35,13 +36,13 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
 }
 
-// void resize_window_callback(GLFWwindow *window, int width, int height)
-// {
-//     glViewport(0, 0, width, height);
+void resize_window_callback(GLFWwindow *window, int width, int height)
+{
+    glViewport(0, 0, width, height);
 
-//     glm::mat4 projection = glm::perspective(45.0, ((double)width)/((double)height), 0.1, 100.0);
-//     glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(projection));
-// }
+    glm::mat4 projection = glm::perspective(45.0, ((double)width)/((double)height), 0.1, 100.0);
+    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(projection));
+}
 
 int main()
 {
@@ -59,7 +60,7 @@ int main()
     }
 
     glfwMakeContextCurrent(window);
-    // glfwSetWindowSizeCallback(window, resize_window_callback);
+    glfwSetWindowSizeCallback(window, resize_window_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -74,6 +75,8 @@ int main()
     // GLuint rendering_program2 = compile_shaders(1);
     Shader shader("../res/shaders/VertexColor.glsl");
     shader.Bind();
+
+    Renderer renderer;
 
     const Vertex vertices[] = {
         {glm::vec3(-0.25, -0.25, 0.25), glm::vec4(1.0, 1.0, 1.0, 1.0)}, // 0 - lewo, dół, przód
@@ -112,6 +115,7 @@ int main()
     };
 
     VertexArrayObject vertexArrayObject;
+    vertexArrayObject.Bind();
 
 
     // create a buffer so we can push those vertices to the target
@@ -129,10 +133,7 @@ int main()
 
     // glm::mat4 trans = glm::mat4(1.0f);
 
-    shader.Unbind();
-    glm::mat4 projection = glm::perspective(45.0, 800.0/600.0, 0.1, 100.0);
-    glm::mat4 View = glm::mat4(1.0f);
-
+    // shader.Unbind();
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -144,25 +145,9 @@ int main()
     // rendering loop
     while (!glfwWindowShouldClose(window))
     {
-        shader.Bind();
-
         double currentTime = glfwGetTime();
-        glClear(GL_COLOR_BUFFER_BIT);
-        glClearBufferfi(GL_DEPTH_STENCIL, 0, 1.0, 0);
-        // trans = glm::rotate(trans, (float)currentTime / 1000, glm::vec3(0.0, 1.0, 0.0));
-        float f = (float) currentTime * (float) M_PI * 0.1;
-        
-        // trans = glm::vec3(0.0, 0.0, -4.0) * glm::vec3(sinf(2.1 * f) * 0.5, cosf(1.7 * f), sinf(1.3 * f) * cosf(1.5 * f) * 2.0f)
 
-        View = glm::translate(glm::identity<glm::mat4>(), glm::vec3(0.0, 0.0, -4.0)) * 
-        glm::translate(glm::identity<glm::mat4>(), glm::vec3(sinf(2.1 * f) * 0.5, cosf(1.7 * f), sinf(1.3 * f) * cosf(1.5 * f) * 2.0f));
-        View = glm::rotate(View, (float)(currentTime * 0.45), glm::vec3(0.0, 1.0, 0.0));
-        View = glm::rotate(View, (float)(currentTime * 0.81), glm::vec3(1.0, 0.0, 0.0));
-        
-        shader.SetUniformMatrix4fv("projection", projection);
-        shader.SetUniformMatrix4fv("transform", View);
-
-        GLCall(glDrawElements(GL_TRIANGLES, elementBuffer.GetCount(), GL_UNSIGNED_INT, 0));
+        renderer.Draw(vertexArrayObject, elementBuffer, shader, currentTime);
 
         processInput(window);
         glfwSwapBuffers(window);

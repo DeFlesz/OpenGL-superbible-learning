@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 
+#include "Renderer.h"
 
 Shader::Shader(const std::string& filepath) : filePath(filepath)
 {  
