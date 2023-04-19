@@ -21,6 +21,8 @@
 #include "VertexBuffer.h"
 #include "ElementBuffer.h"
 
+#include "Texture.h"
+
 #define WIDTH 800
 #define HEIGHT 600
 
@@ -28,6 +30,7 @@ struct Vertex
 {
     glm::vec3 position;
     glm::vec4 color;
+    glm::vec2 uv;
 };
 
 void processInput(GLFWwindow *window)
@@ -76,42 +79,46 @@ int main()
     Shader shader("../res/shaders/VertexColor.glsl");
     shader.Bind();
 
+    Texture texture("../res/assets/photo.png");
+    texture.Bind();
+    shader.SetUniform1i("u_Texture", 0);
+
     Renderer renderer;
 
     const Vertex vertices[] = {
-        {glm::vec3(-0.25, -0.25, 0.25), glm::vec4(1.0, 1.0, 1.0, 1.0)}, // 0 - lewo, dół, przód
-        {glm::vec3(0.25, -0.25, 0.25), glm::vec4(0.0, 1.0, 0.0, 1.0)}, // 1 - prawo, dół, przód
-        {glm::vec3(-0.25, 0.25, 0.25), glm::vec4(1.0, 0.0, 0.0, 1.0)}, // 2 - lewo, góra, przód
-        {glm::vec3(0.25, 0.25, 0.25), glm::vec4(1.0, 1.0, 0.0, 1.0)}, // 3 - prawo, góra, przód
-        {glm::vec3(-0.25, -0.25, -0.25), glm::vec4(0.0, 0.0, 1.0, 1.0)}, // 4 - lewo, dół, tył
-        {glm::vec3(0.25, -0.25, -0.25), glm::vec4(0.0, 1.0, 1.0, 1.0)}, // 5 - prawo, dół, tył
-        {glm::vec3(-0.25, 0.25, -0.25), glm::vec4(1.0, 0.0, 1.0, 1.0)}, // 6 - lewo, góra, tył
-        {glm::vec3(0.25, 0.25, -0.25), glm::vec4(0.0, 0.0, 0.0, 1.0)}, // 7 - prawo, góra, tył
+        {glm::vec3(-0.25, -0.25, 0.25), glm::vec4(1.0, 1.0, 1.0, 1.0), glm::vec2(0.0, 0.0)}, // 0 - lewo, dół, przód
+        {glm::vec3(0.25, -0.25, 0.25), glm::vec4(0.0, 1.0, 0.0, 1.0), glm::vec2(1.0, 0.0)}, // 1 - prawo, dół, przód
+        {glm::vec3(-0.25, 0.25, 0.25), glm::vec4(1.0, 0.0, 0.0, 1.0), glm::vec2(0.0, 1.0)}, // 2 - lewo, góra, przód
+        {glm::vec3(0.25, 0.25, 0.25), glm::vec4(1.0, 1.0, 0.0, 1.0), glm::vec2(1.0, 1.0)}, // 3 - prawo, góra, przód
+        {glm::vec3(-0.25, -0.25, -0.25), glm::vec4(0.0, 0.0, 1.0, 1.0), glm::vec2(0.0, 1.0)}, // 4 - lewo, dół, tył
+        {glm::vec3(0.25, -0.25, -0.25), glm::vec4(0.0, 1.0, 1.0, 1.0), glm::vec2(1.0, 1.0)}, // 5 - prawo, dół, tył
+        {glm::vec3(-0.25, 0.25, -0.25), glm::vec4(1.0, 0.0, 1.0, 1.0), glm::vec2(0.0, 0.0)}, // 6 - lewo, góra, tył
+        {glm::vec3(0.25, 0.25, -0.25), glm::vec4(0.0, 0.0, 0.0, 1.0), glm::vec2(1.0, 0.0)}, // 7 - prawo, góra, tył
     };
 
     const unsigned int indices[] = {
         // top
-        2, 6, 7,
+        2, 7, 6,
         2, 3, 7,
         // bottom
         0, 4, 5,
-        0, 1, 5,
+        0, 5, 1,
 
         // left
         0, 2, 6,
-        0, 4, 6,
+        0, 6, 4,
 
         // right
-        1, 3, 7,
+        1, 7, 3,
         1, 5, 7,
 
         // front
-        0, 2, 3,
+        0, 3, 2,
         0, 1, 3,
 
         // back
         4, 6, 7,
-        4, 5, 7
+        4, 7, 5
     };
 
     VertexArrayObject vertexArrayObject;
@@ -124,6 +131,7 @@ int main()
     VertexBufferLayout layout;
     layout.Push<float>(3);
     layout.Push<float>(4);
+    layout.Push<float>(2);
 
     vertexArrayObject.AddBuffer(vertexBuffer, layout);
 
@@ -139,7 +147,7 @@ int main()
     glDepthFunc(GL_LEQUAL);
 
     // to be enabled when i will have faces to cull
-    // glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     // glFrontFace(GL_CCW);
 
     // rendering loop

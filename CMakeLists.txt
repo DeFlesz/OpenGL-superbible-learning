@@ -29,7 +29,9 @@ add_executable(
     src/VertexBuffer.cpp
     src/VertexBufferLayout.cpp
     src/ElementBuffer.cpp
-    src/VertexArrayObject
+    src/VertexArrayObject.cpp
+    src/Texture.cpp
+    src/stb_image.cpp
 )
 
 target_include_directories(${PROJECT_NAME} 

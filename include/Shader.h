@@ -27,6 +27,7 @@ class Shader {
     void Unbind() const;
 
     void SetUniformMatrix4fv(const std::string& name, glm::mat4& mat);
+    void SetUniform1i(const std::string& name, int value);
 
   private:
     unsigned int CreateShader(std::string& vertexSource, std::string& fragmentSource);

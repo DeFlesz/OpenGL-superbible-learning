@@ -1,6 +1,11 @@
 [Bb][Uu][Ii][Ll][Dd]
 
 build/
+#test photo, put anything I don't have copyright to this one
+res/assets/photo.png
+.cache/
+*.vcxproj*
+*.sln
 
 CMakeLists.txt.user
 CMakeCache.txt
